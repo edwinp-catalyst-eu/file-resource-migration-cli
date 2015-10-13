@@ -76,6 +76,8 @@ foreach ($fileresources->children() as $resourcedetails) {
     }
 }
 
+purge_all_caches();
+
 xlog('Scripting finished');
 xlog(count($found) . ' files were found and processed successfully');
 xlog(count($notfound) . ' files were not found');
