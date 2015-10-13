@@ -36,7 +36,7 @@ foreach ($fileresources->children() as $resourcedetails) {
     $resourcename = (string) $resourcedetails->field['4'];
     $filename = (string) $resourcedetails->field['5'];
 
-    if (file_exists($fileresourcefolder . $filename)) {
+    if (file_exists($fileresourcefolder . $courseid . '/' . $filename)) {
 
         $found[] = $filename;
 
@@ -54,39 +54,17 @@ foreach ($fileresources->children() as $resourcedetails) {
         $file_record['timemodified'] = time();
 
         xlog("Migrating resource content file '{$filename}' into module ID {$cmid}: '{$resourcename}' of course ID {$courseid}: '{$coursename}'");
-        $fs->create_file_from_pathname($file_record, $fileresourcefolder . $filename);
-
-        // Update {resource} table where id = $resourceid
-        // Retrieve the hash from the file
-        $hash = $DB->get_field('files', 'contenthash',
-                array('filename' => $filename, 'contextid' => $context->id));
-
-        $resource = new stdClass();
-        $resource->id = $resourceid;
-        $resource->reference = $filename;
-        $resource->md5hash = '';
-        $resource->sha1hash = $hash;
-
-        $DB->update_record('resource', $resource);
-
-        // 2. The 'instance' field in the {course_modules} table of the record,
-        // where ('id' => $resource->coursemodule) is set to the new record ID from step 1
-        $DB->set_field('course_modules', 'instance', $resourceid, array('id' => $cmid));
-
-        // Get the whole resource object data
-        $resource = $DB->get_record('resource', array('id' => $resourceid));
-
-        // Extra fields required in grade related functions.
-        $resource->course     = $courseid;
-        $resource->cmidnumber = '';
-        $resource->cmid       = $cmid;
+        $fs->create_file_from_pathname($file_record, $fileresourcefolder . $courseid . '/' . $filename);
 
         xlog("Configuring resource module '{$resourcename}'");
 
         // Specific settings for the resource package
         $resourcesettings = new stdClass();
         $resourcesettings->id = $resourceid;
-        // $resourcesettings->foo = 'bar';
+        $resourcesettings->tobemigrated = 0;
+        $resourcesettings->displayoptions = 'a:1:{s:10:"printintro";i:1;}';
+        $resourcesettings->revision = 1;
+        $resourcesettings->timemodified = time();
         $DB->update_record('resource', $resourcesettings);
 
         xlog("Resource module '{$resourcename}' configured successfully");
